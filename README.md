@@ -18,6 +18,7 @@ Yayav is a cross-platform antivirus scanner built using Tauri and SvelteKit. It 
 -  Node.js (latest LTS recommended)
 -  Rust
 -  libwebgtk2 (Linux)
+-  yara-forge (optional) (https://github.com/YARAHQ/yara-forge)
     
 
 ## Installation & Build
