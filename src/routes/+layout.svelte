@@ -34,7 +34,8 @@ const scan = async () => {
         await invoke("yara_scan_targets", {
             paths: target.paths,
             rulePaths: rule_paths,
-            dirs: target.is_dirs
+            dirs: target.is_dirs,
+            memory: target.is_memory
         });
     }
 }
