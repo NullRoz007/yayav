@@ -1,9 +1,0 @@
-{
-	"/": [
-		"src/routes/+layout.js",
-		"src/routes/+layout.js"
-	],
-	"/rules": [
-		"src/routes/+layout.js"
-	]
-}
