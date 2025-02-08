@@ -2,6 +2,7 @@ extern crate dirs;
 extern crate tokio;
 
 mod yaylog;
+mod yaymem;
 
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -10,15 +11,15 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
 use std::sync::Arc;
-use std::error::Error;
 
-//TODO: Just use rayon...
 use tokio::task;
 use rayon::prelude::*; 
 
-use yaylog::{log_message, log_match, log_set_app_handle, LogLevel};
+use yaylog::{ log_message, log_match, log_set_app_handle, LogLevel };
+use yaymem::{ dump_process, get_process_list, get_output_dir };
 
 use walkdir::WalkDir;
+use sysinfo::System;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[derive(Serialize, Deserialize)]
@@ -28,11 +29,12 @@ struct YayRuleset {
     rules: Vec<String>,
 }
 
-struct ScanHandle { //TODO: Implement tokio cancellation tokens for canceling in-progress scans. 
+//struct ScanHandle { //TODO: Implement tokio cancellation tokens for canceling in-progress scans. 
 
-}
+//}
 
 fn get_ruleset_dir_path() -> String { //TODO: error handling here.
+    println!("RSD: {}", dirs::data_dir().unwrap().display());
     dirs::data_dir()
         .map(|path| path.join("yara-forge-rules")).unwrap().display().to_string()
 }
@@ -119,10 +121,10 @@ fn yay_get_ruleset_paths() -> Result<Vec<String>, String> {
     
         let path_buf = dir.path();
         if path_buf.is_dir() {
+            log_message(LogLevel::Info, &format!("Using ruleset Directory: {}", path_buf.to_string_lossy().to_string()), false);
             ruleset_dir_paths.push(path_buf.to_string_lossy().to_string());
         }
     }
-    
     Ok(ruleset_dir_paths)
 }
 
@@ -192,6 +194,27 @@ async fn yara_compile_rulesets(mut paths: Vec<String>) {
     log_message(LogLevel::Success, "Done.", false);
 }
 
+fn yara_scan_mem(memory: Vec<u8>, rules: &[Arc<yara_x::Rules>]) {
+    log_message(LogLevel::Warning, &format!("Scanning {} bytes.", memory.len()), false);
+
+    for rule in rules {
+        let mut scanner = yara_x::Scanner::new(rule);
+        if let Ok(results) = scanner.scan(&memory) {
+            for rule in results.matching_rules() {
+                log_message(
+                    LogLevel::Error,
+                    &format!("{} matched: {}", "MEMORY", rule.identifier()),
+                    false,
+                );
+                
+                log_match(&rule, "MEMORY");
+            }
+        } else {
+            log_message(LogLevel::Error, "Scan failed!", false);
+        }
+    }
+} 
+
 /// Scan a given directory, recursively
 #[tauri::command]
 async fn yara_scan_dir(path: &str, rules: &[Arc<yara_x::Rules>]) -> Result<(), String> {
@@ -248,21 +271,34 @@ fn panic_scan(e: String) {
     panic!("{}", e.to_string());
 }
 
-async fn scan(paths: &[String], rules: &[Arc<yara_x::Rules>], dirs: bool) {
-    println!("!");
-    if dirs {
+async fn scan(paths: &[String], rules: &[Arc<yara_x::Rules>], dirs: bool, memory: bool) {
+    if dirs {               // Scan dirs
         for dir in paths {
-            if let Err(e) = yara_scan_dir(dir, rules).await {
+            if let Err(e) = yara_scan_dir(dir, rules).await { //Dir scan threads are spawned in the yara_scan_dir function
                 panic_scan(e.to_string());
             }
         }
-    } else {
+    } else { 
         let _ = task::spawn_blocking({
             let paths = paths.to_owned();
             let rules = rules.to_owned();
+
             move || {
-                for target in paths {
-                    yara_scan_file(&target, &rules);
+                if memory { // Scan memory
+                    let outdir = get_output_dir();
+                    let pids = get_process_list();
+                    for pid in pids {
+                        let pid_outdir = format!("{}/by-pid/{}", outdir, pid);
+                        fs::create_dir_all(&pid_outdir).unwrap();
+    
+                        if let Some(mem) = dump_process(pid.as_str(), &pid_outdir) {
+                            yara_scan_mem(mem, &rules);
+                        }
+                    }
+                } else { // Scan single files
+                    for target in paths {
+                        yara_scan_file(&target, &rules);
+                    }
                 }
             }
         })
@@ -274,7 +310,7 @@ async fn scan(paths: &[String], rules: &[Arc<yara_x::Rules>], dirs: bool) {
 /// TODO: Return Result<(), Error>, rather than just panicing on an error. 
 /// Loads all rules into memory before scanning
 #[tauri::command]
-async fn yara_scan_targets(paths: Vec<String>, rule_paths: Vec<String>, dirs: bool) {
+async fn yara_scan_targets(paths: Vec<String>, rule_paths: Vec<String>, dirs: bool, memory: bool) {
     print_block_text();
     log_message(LogLevel::Info, "Loading Yara rules into memory, this may take a while...", false);
 
@@ -304,11 +340,9 @@ async fn yara_scan_targets(paths: Vec<String>, rule_paths: Vec<String>, dirs: bo
     }
 
     log_message(LogLevel::Success, "Done.", false);
-    scan(&paths, &rules, dirs).await;
+    scan(&paths, &rules, dirs, memory).await;
     log_message(LogLevel::Success, "Scan complete.", false);
 }
-
-
 
 pub fn run() {
     tauri::Builder::default()

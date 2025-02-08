@@ -42,7 +42,7 @@ const open_rule_drawer = (rule) => {
 		<svelte:fragment slot="content">
             <Accordion>
             {#each get_matches() as match}
-                <AccordionItem class="variant-ghost-surface">
+                <AccordionItem class="variant-ghost-surface ">
                     <svelte:fragment slot="lead"><p class="overflow-hide">{match.path}</p></svelte:fragment>
                     <svelte:fragment slot="summary">{null}</svelte:fragment>
                     <svelte:fragment slot="content">

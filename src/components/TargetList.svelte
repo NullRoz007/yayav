@@ -2,10 +2,11 @@
 // @ts-nocheck
 import { yayState } from "$lib/state.svelte";
 import { open } from '@tauri-apps/plugin-dialog';
-const add_target = (paths, is_dirs) => {
+const add_target = (paths, is_dirs, is_memory) => {
     const target = {
         'paths': paths,
-        'is_dirs': is_dirs 
+        'is_dirs': is_dirs,
+        'is_memory': is_memory
     };
 
     yayState.targets.push(target);
@@ -44,8 +45,7 @@ const show_dir_dialog = async () => {
     <div class="card m-4 max-w-128">
         <header class="card-header">
             <div class="flex justify-between">
-
-                <span>Type: {target.is_dirs ? "Directories" : "Files" }</span>
+                <span>Type: {target.is_dirs ? "Directories" : (target.is_memory ? "Memory" : "Files") }</span>
                 <button type="button" class="btn btn-sm variant-filled-error " onclick={() => {remove_target(target_index)}}>x</button>
             </div>
         </header>
@@ -68,5 +68,6 @@ const show_dir_dialog = async () => {
 <div class="btn-group variant-filled-primary">
     <button onclick={show_file_dialog}>Add file</button>
     <button onclick={show_dir_dialog}>Add directory</button>
+    <button onclick={() => { add_target([], false, true) }}>Add memory</button>
 </div>
 </div>
