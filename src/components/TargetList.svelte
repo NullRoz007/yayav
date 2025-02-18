@@ -23,8 +23,7 @@ const show_file_dialog = async () => {
     });
     
     if(files.length == 0) return;
-
-    add_target(files, false);
+    add_target(files, false, false);
 }
 
 const show_dir_dialog = async () => {
@@ -34,8 +33,7 @@ const show_dir_dialog = async () => {
     });
     
     if(dirs.length == 0) return;
-    
-    add_target(dirs, true);
+    add_target(dirs, true, false);
 }
 
 </script>

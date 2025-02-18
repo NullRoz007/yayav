@@ -345,6 +345,9 @@ async fn yara_scan_targets(paths: Vec<String>, rule_paths: Vec<String>, dirs: bo
 }
 
 pub fn run() {
+    static TEST_DATA: &str = "Lorem Ipsum"; 
+    println!("{}", TEST_DATA);
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
