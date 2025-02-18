@@ -63,7 +63,7 @@ const generate_raw_github_link = (url) => {
     return raw_url;
 };
 
-const get_rule_src = async (url) => {
+const fetch_rule_src = async (url) => {
     let raw_url = generate_raw_github_link(url);
     try {
         let response = await fetch(raw_url);
@@ -81,18 +81,40 @@ const get_rule_src = async (url) => {
     return "";
 }
 
+const rule_src = (identifier) => {
+    console.log("rule src, id = " + identifier);
+    console.log("rules src, source map =  ");
+    console.log(yayState.rule_source_map);
+    console.log("rule src, source map lookup =");
+    console.log(yayState.rule_source_map[identifier]);
+    return yayState.rule_source_map[identifier];
+}
+
 listen('log_message', event => {
     if(yayState.log_messages.length == 100) yayState.log_messages = [];
     yayState.log_messages.push(event.payload);
 });
 
-listen('log_match', event => {
+listen('log_match', async (event) => {
+    let json_rule = JSON.parse(event.payload.rule_json)
+   
+    var src_url = '';
+    for(let meta of json_rule.metadata) {
+        if(meta[0] == 'source_url') {
+            src_url = meta[1];
+            break;
+        }
+    }
+
+    var src = await fetch_rule_src(src_url);
+    yayState.rule_source_map[json_rule.identifier] = src;
+
     if(yayState.matches_map[event.payload.path]) {
         yayState.matches_map[event.payload.path].push(JSON.parse(event.payload.rule_json));
         return;
     }
 
-    yayState.matches_map[event.payload.path] = [JSON.parse(event.payload.rule_json)];
+    yayState.matches_map[event.payload.path] = [json_rule];
 });
 
 initializeStores();
@@ -111,16 +133,11 @@ let rule_text = "";
             
             <ul class="list-disc pl-5 text-sm">
                 {#each $drawerStore.meta.metadata as meta}
-                    {#if meta[0] == 'source_url'}
-                        {#await get_rule_src(meta[1])}{:then source_code}
-                            { $drawerStore.meta['source_code'] = source_code }
-                        {/await}
-                    {/if}
                     <li><strong>{meta[0]}:</strong> {meta[1]}</li>
                 {/each}
             </ul>
-
-            <CodeBlock lineNumbers=true language="yara" code={$drawerStore.meta['source_code']}></CodeBlock>
+            
+            <CodeBlock lineNumbers=true language="yara" code={rule_src($drawerStore.meta.identifier)}></CodeBlock>
         </div>
     {/if}
 </Drawer>

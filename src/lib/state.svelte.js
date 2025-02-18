@@ -4,7 +4,8 @@ export const yayState = $state({
     log_messages: [],
     targets : [],
     matches: [],
-    matches_map: {}
+    matches_map: {},
+    rule_source_map: {}
 });
 
 export const get_matches = () => {
@@ -15,7 +16,6 @@ export const get_matches = () => {
             'path': path,
             'rules': yayState.matches_map[path]
         };
-        console.log(match);
 
         matches.push(match);
     }
