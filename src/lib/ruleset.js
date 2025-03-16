@@ -1,6 +1,12 @@
 import { yayState } from "$lib/state.svelte";
 import { invoke } from "$lib/invoke-wrapper";
 
+export const get_ruleset_dir_path = async () => {
+    console.log("!");
+    let path = await invoke('get_ruleset_dir_path', {});
+    return path;
+}
+
 export const compile_enabled_rulesets = async () => {
     var ruleset_paths = [];
     

@@ -3,6 +3,7 @@ import { yayState } from "$lib/state.svelte";
 
 export const invoke = async (cmd, args, options) => {
     yayState.is_loading = true;
+    
     var result = await _invoke(cmd, args, options);
     yayState.is_loading = false;
     

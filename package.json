@@ -4,9 +4,8 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"forge": "./yara-forge.sh",
-		"dev": "vite dev",
-		"build": "vite build",
+		"dev": "node bundle.js && vite dev",
+		"build": "node bundle.js && vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
@@ -33,7 +32,12 @@
 	"dependencies": {
 		"@tauri-apps/plugin-dialog": "^2.2.0",
 		"@tauri-apps/plugin-fs": "^2.2.0",
+		"@tauri-apps/plugin-shell": "^2.2.0",
+		"@tensorflow/tfjs": "^4.22.0",
+		"@tensorflow/tfjs-backend-wasm": "^4.22.0",
+		"@tensorflow/tfjs-vis": "^1.5.1",
 		"highlight.js": "^11.11.1",
-		"highlightjs-yara": "^1.1.1"
+		"highlightjs-yara": "^1.1.1",
+		"papaparse": "^5.5.2"
 	}
 }

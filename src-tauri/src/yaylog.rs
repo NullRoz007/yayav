@@ -1,8 +1,8 @@
 use chrono::Local; // For timestamps
 use colored::*; // For colored output
 
-use std::sync::Mutex;
 use once_cell::sync::Lazy;
+use std::sync::Mutex;
 
 use tauri::AppHandle;
 use tauri::Emitter;
@@ -16,7 +16,7 @@ static APP_HANDLE: Lazy<Mutex<Option<AppHandle>>> = Lazy::new(|| Mutex::new(None
 struct LogMessageEvent<'a> {
     msg: &'a str,
     time: &'a str,
-    lvl: LogLevel
+    lvl: LogLevel,
 }
 
 #[derive(Clone, Serialize)]
@@ -25,13 +25,13 @@ struct SerializableRule {
     namespace: String,
     metadata: Value,
     tags: String,
-    patterns: String
+    patterns: String,
 }
 
 #[derive(Clone, Serialize)]
 struct MatchMessageEvent {
     rule_json: String,
-    path: String
+    path: String,
 }
 
 fn rule_to_serializable_rule(rule: &yara_x::Rule) -> SerializableRule {
@@ -40,7 +40,7 @@ fn rule_to_serializable_rule(rule: &yara_x::Rule) -> SerializableRule {
         namespace: rule.namespace().to_string(),
         metadata: rule.metadata().into_json(),
         tags: String::from(""),
-        patterns: String::from("")
+        patterns: String::from(""),
     };
 
     serializable_rule
@@ -59,7 +59,7 @@ pub enum LogLevel {
     Warning,
     Error,
     Success,
-    None
+    None,
 }
 
 pub fn log_match(_rule: &yara_x::Rule, _path: &str) {
@@ -67,10 +67,13 @@ pub fn log_match(_rule: &yara_x::Rule, _path: &str) {
         let sr = rule_to_serializable_rule(_rule);
         let r = serde_json::to_string(&sr).expect("Failed to serialize Rule!");
 
-        let _ = app_handle.emit("log_match", MatchMessageEvent {
-            rule_json: r,
-            path: _path.to_string()
-        });
+        let _ = app_handle.emit(
+            "log_match",
+            MatchMessageEvent {
+                rule_json: r,
+                path: _path.to_string(),
+            },
+        );
     }
 }
 
@@ -83,9 +86,9 @@ pub fn log_message(level: LogLevel, message: &str, no_format: bool) {
         LogLevel::Warning => ("WARNING", message.yellow()),
         LogLevel::Error => ("ERROR", message.red().bold()),
         LogLevel::Success => ("SUCCESS", message.green()),
-        LogLevel::None => ("INFO", message.white())
+        LogLevel::None => ("INFO", message.white()),
     };
-    
+
     if no_format {
         println!("{}", colorized_message)
     } else {
@@ -98,10 +101,13 @@ pub fn log_message(level: LogLevel, message: &str, no_format: bool) {
     }
 
     if let Some(app_handle) = APP_HANDLE.lock().unwrap().as_ref() {
-        let _ = app_handle.emit("log_message", LogMessageEvent {
-            msg: message,
-            time: timestamp.as_str(),
-            lvl: level 
-        });
+        let _ = app_handle.emit(
+            "log_message",
+            LogMessageEvent {
+                msg: message,
+                time: timestamp.as_str(),
+                lvl: level,
+            },
+        );
     }
 }

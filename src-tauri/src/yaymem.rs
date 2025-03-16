@@ -1,6 +1,11 @@
-use std::fs::File;
-use std::{fs, io::{Read, Seek, SeekFrom}, path::Path, process::Command};
 use crate::yaylog::{log_message, LogLevel};
+use std::fs::File;
+use std::{
+    fs,
+    io::{Read, Seek, SeekFrom},
+    path::Path,
+    process::Command,
+};
 
 /// ============================================ ///
 ///             Helper Functions                 ///
@@ -10,18 +15,22 @@ fn check_env() -> bool {
 }
 
 fn hostname() -> String {
-    String::from_utf8_lossy(&Command::new("hostname").output().unwrap().stdout).trim().to_string()
+    String::from_utf8_lossy(&Command::new("hostname").output().unwrap().stdout)
+        .trim()
+        .to_string()
 }
 
 fn date() -> String {
-    String::from_utf8_lossy(&Command::new("date").arg("+%Y%m%d").output().unwrap().stdout).trim().to_string()
+    String::from_utf8_lossy(&Command::new("date").arg("+%Y%m%d").output().unwrap().stdout)
+        .trim()
+        .to_string()
 }
 
 /// ============================================ ///
 ///       Linux Memory Dumping Functions         ///
 /// ============================================ ///
 
-/// Return the output dir for memory dumping 
+/// Return the output dir for memory dumping
 pub fn get_output_dir() -> String {
     format!("./{}-{}", hostname(), date())
 }
@@ -48,7 +57,11 @@ pub fn get_process_list() -> Vec<String> {
 fn dump_range(pid: &str, range: &str, outf: &str) -> Option<Vec<u8>> {
     let ranges: Vec<&str> = range.split('-').collect();
     if ranges.len() != 2 {
-        log_message(LogLevel::Error, &format!("Invalid range format for pid {}", pid), false);
+        log_message(
+            LogLevel::Error,
+            &format!("Invalid range format for pid {}", pid),
+            false,
+        );
         return None;
     }
 
@@ -64,7 +77,11 @@ fn dump_range(pid: &str, range: &str, outf: &str) -> Option<Vec<u8>> {
         }
     }
 
-    log_message(LogLevel::Error, &format!("Failed to dump memory for pid {}", pid), false);
+    log_message(
+        LogLevel::Error,
+        &format!("Failed to dump memory for pid {}", pid),
+        false,
+    );
     None
 }
 
@@ -72,7 +89,7 @@ fn dump_range(pid: &str, range: &str, outf: &str) -> Option<Vec<u8>> {
 pub fn dump_process(pid: &str, dir: &str) -> Option<Vec<u8>> {
     let cmdline_path = format!("/proc/{}/cmdline", pid);
     println!("path: {}", cmdline_path);
-    if let Ok(cmdline) = fs::read(&cmdline_path) { 
+    if let Ok(cmdline) = fs::read(&cmdline_path) {
         fs::write(format!("{}/cmdline", dir), cmdline).unwrap();
     }
 
@@ -85,7 +102,11 @@ pub fn dump_process(pid: &str, dir: &str) -> Option<Vec<u8>> {
     let maps_content = match fs::read_to_string(&maps_path) {
         Ok(content) => content,
         Err(e) => {
-            log_message(LogLevel::Error, &format!("Failed to read maps file for pid {}: {}", pid, e), false);
+            log_message(
+                LogLevel::Error,
+                &format!("Failed to read maps file for pid {}: {}", pid, e),
+                false,
+            );
             return None;
         }
     };
@@ -93,8 +114,10 @@ pub fn dump_process(pid: &str, dir: &str) -> Option<Vec<u8>> {
     let mut memory_dump = Vec::new();
     for line in maps_content.lines() {
         let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() < 2 { continue; }
-        
+        if parts.len() < 2 {
+            continue;
+        }
+
         let range = parts[0];
         let perms = parts[1];
         let what = parts.get(5).copied().unwrap_or("");
@@ -108,7 +131,7 @@ pub fn dump_process(pid: &str, dir: &str) -> Option<Vec<u8>> {
                 _ if what.contains(".so") => {
                     let libname = Path::new(what).file_name().unwrap().to_str().unwrap();
                     format!("{}/{}@{}", shared_libs_dir, libname, rangestart)
-                },
+                }
                 _ => continue,
             };
             if let Some(data) = dump_range(pid, range, &dump_path) {
@@ -116,6 +139,6 @@ pub fn dump_process(pid: &str, dir: &str) -> Option<Vec<u8>> {
             }
         }
     }
-    
+
     Some(memory_dump)
 }

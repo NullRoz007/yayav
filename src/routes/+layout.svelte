@@ -3,9 +3,11 @@
 import '../app.css';
 import { AppShell } from '@skeletonlabs/skeleton';
 import { AppBar } from '@skeletonlabs/skeleton'
-import { LightSwitch } from '@skeletonlabs/skeleton';
 import { AppRail, AppRailTile, AppRailAnchor } from '@skeletonlabs/skeleton';
 import { CodeBlock } from '@skeletonlabs/skeleton';
+import  Dropdown from '../components/Dropdown.svelte';
+import { ProgressRadial } from '@skeletonlabs/skeleton';
+import { LightSwitch } from '@skeletonlabs/skeleton';
 import { initializeStores, getDrawerStore, Drawer } from '@skeletonlabs/skeleton';
 import { storeHighlightJs } from '@skeletonlabs/skeleton';
 import { page } from '$app/stores';
@@ -14,7 +16,7 @@ import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 
 import { invoke } from "$lib/invoke-wrapper";
-import { yayState } from "$lib/state.svelte";
+import { get_model_sidecar_ready, yayState } from "$lib/state.svelte";
 
 import hljs from 'highlight.js/lib/core';
 import 'highlight.js/styles/github-dark.css';
@@ -82,10 +84,7 @@ const fetch_rule_src = async (url) => {
 }
 
 const rule_src = (identifier) => {
-    console.log("rule src, id = " + identifier);
-    console.log("rules src, source map =  ");
     console.log(yayState.rule_source_map);
-    console.log("rule src, source map lookup =");
     console.log(yayState.rule_source_map[identifier]);
     return yayState.rule_source_map[identifier];
 }
@@ -123,6 +122,7 @@ hljs.registerLanguage('yara', yara);
 storeHighlightJs.set(hljs);
 
 const drawerStore = getDrawerStore();
+
 let rule_text = "";
 </script>
 <Drawer>
@@ -146,19 +146,27 @@ let rule_text = "";
 	<!-- (sidebarRight) -->
 	<!-- (pageHeader) -->
     <svelte:fragment slot="header">
-		<AppBar>
+        <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end">
             <svelte:fragment slot="lead">yayAV</svelte:fragment>
             <svelte:fragment slot="trail"><LightSwitch /></svelte:fragment>
         </AppBar>
 	</svelte:fragment>
-    
     <svelte:fragment slot="sidebarLeft">
         <AppRail>
             <AppRailAnchor href="/" selected={$page.url.pathname === '/'}>Scan</AppRailAnchor>
             <AppRailAnchor href="/rules" selected={$page.url.pathname === '/rules'}>Yara</AppRailAnchor>
+            <AppRailAnchor href="/detect" selected={$page.url.pathname === '/detect'} >
+                {console.log(yayState.model_sidecar_ready)}
+                {#if get_model_sidecar_ready() }
+                    ML
+                {:else}
+                    <div class="flex justify-center items-center">
+                        <ProgressRadial width='w-8'/>
+                    </div>
+                {/if}
+            </AppRailAnchor>
         </AppRail>
     </svelte:fragment>
-
 	<!-- Router Slot -->
     {@render children()}
 	<!-- ---- / ---- -->

@@ -7,6 +7,16 @@
   ],
   "permissions": [
     "core:default",
-    "dialog:default"
+    "dialog:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/yaymodel",
+          "sidecar": true
+        }
+      ]
+    },
+    "shell:allow-open"
   ]
 }
