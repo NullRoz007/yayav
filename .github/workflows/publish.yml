@@ -51,6 +51,7 @@ jobs:
       - name: install sidecar-model dependencies
         run: |
           cd sidecar-model
+          npm install -g pkg
           npm install
 
       - name: install frontend dependencies
