@@ -1,3 +1,6 @@
+# sidecars
+src-tauri/binaries/*
+
 # build
 build/
 .sveltekit/
