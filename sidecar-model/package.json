@@ -17,9 +17,7 @@
     "assets": [
       "node_modules/**/*"
     ],
-    "targets": [
-      "node22"
-    ]
+    "targets": ["node22"]
   },
   "author": "",
   "license": "ISC",
