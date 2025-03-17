@@ -18,6 +18,8 @@ if (!targetTriple) {
   console.error('Failed to determine platform target triple');
 }
 
+if(!fs.existsSync('../src-tauri/binaries/')) fs.mkdirSync('../src-tauri/binaries/');
+
 console.log('Moving binary...');
 fs.renameSync(
   `./yaymodel${ext}`,
